@@ -1,0 +1,105 @@
+import random
+
+# =========================
+# Board 클래스: 게임판 관리
+# =========================
+class Board:
+    def __init__(self, size, mine_count):
+        self.size = size
+        self.mine_count = mine_count
+        self.nums = [[0]*size for _ in range(size)]      # 실제 지뢰 위치와 숫자
+        self.display = [['+']*size for _ in range(size)] # 사용자에게 보여줄 화면
+        self.place_mines()
+
+    # 지뢰 배치
+    def place_mines(self):
+        count = 0
+        while count < self.mine_count:
+            row = random.randint(0, self.size-1)
+            col = random.randint(0, self.size-1)
+            if self.nums[row][col] == 9:
+                continue
+            self.nums[row][col] = 9
+            count += 1
+            self.update_neighbors(row, col)
+
+    # 주변 8칸 숫자 증가
+    def update_neighbors(self, row, col):
+        for r in range(max(0,row-1), min(self.size,row+2)):
+            for c in range(max(0,col-1), min(self.size,col+2)):
+                if self.nums[r][c] != 9:
+                    self.nums[r][c] += 1
+
+    # 좌표 클릭
+    def reveal(self, row, col):
+        if self.nums[row][col] == 9:
+            self.display[row][col] = "$"
+            return True
+        else:
+            self.display[row][col] = str(self.nums[row][col])
+            return False
+
+    # 게임판 출력
+    def show(self):
+        for row in self.display:
+            print(" ".join(row))
+
+
+# =========================
+# MineGame 클래스: 게임 로직
+# =========================
+class MineGame:
+    def __init__(self, size, mine_count):
+        self.board = Board(size, mine_count)
+        self.remain_mines = mine_count
+        self.attempts = 0
+
+    def play(self):
+        while self.remain_mines > 0:
+            try:
+                ans = input(f"x,y >> ")
+                row, col = map(int, ans.split(','))
+                if not (0 <= row < self.board.size and 0 <= col < self.board.size):
+                    print(f"범위를 벗어났습니다! 0~{self.board.size-1} 사이 숫자를 입력하세요.")
+                    continue
+            except ValueError:
+                print("입력 오류! 예: 2,3")
+                continue
+
+            self.attempts += 1
+            hit = self.board.reveal(row, col)
+            if hit:
+                self.remain_mines -= 1
+                print("💥 지뢰를 찾았습니다!")
+            self.board.show()
+            print(f"남은 지뢰: {self.remain_mines}")
+            print(f"총 시도 횟수: {self.attempts}")
+
+        print("🎉 모든 지뢰를 찾았습니다! 게임 종료")
+
+
+# =========================
+# 레벨 선택 및 게임 시작
+# =========================
+def choose_level():
+    print("레벨을 선택하세요:")
+    print("1 - 초급 (5x5, 지뢰 2개)")
+    print("2 - 중급 (7x7, 지뢰 4개)")
+    print("3 - 고급 (10x10, 지뢰 7개)")
+    level = input("선택 >> ")
+
+    if level == '1':
+        return 5, 2
+    elif level == '2':
+        return 7, 4
+    elif level == '3':
+        return 10, 7
+    else:
+        print("잘못된 입력! 기본값: 고급")
+        return 10, 7
+
+# 게임 실행
+if __name__ == "__main__":
+    size, mines = choose_level()
+    game = MineGame(size, mines)
+    game.play()
